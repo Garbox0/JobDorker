@@ -13,7 +13,7 @@ import webbrowser
 import subprocess
 from urllib.parse import quote_plus, urlparse
 
-APP_TITLE = "JobDorker – Búsquedas avanzadas de empleo (MVP v4.19) · Garbox0"
+APP_TITLE = "JobDorker – Búsquedas avanzadas de empleo · Garbox0"
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".jobdorker.json")
 
 # ---------- visor embebido ----------
