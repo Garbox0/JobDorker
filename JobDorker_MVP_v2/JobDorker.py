@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-JobDorker – Búsquedas avanzadas de empleo
-MVP v4.19 · by Garbox0
-
-Novedades 4.19:
-- Logo en el header (busca logo.png / Red_Fort.* en la carpeta del script)
-- Acento “Rojo”
-- Mantiene fixes previos (checkboxes, chips invisibles hasta ejecutar, etc.)
+JobDorker – Búsquedas avanzadas de empleo · by Garbox0
 """
 
 import sys
