@@ -143,15 +143,3 @@ Abrí un **Issue** con bugs o ideas, o enviá un **Pull Request** con mejoras (U
 ## 🧾 Licencia
 
 Este proyecto se publica bajo la licencia **MIT** (ver `LICENSE`).
-
----
-
-## 🙌 Créditos
-
-* UI en **Tkinter** + visor con **pywebview** (fallback al navegador).
-* Dorks y UX pensados para búsquedas laborales reales.
-* by **Garbox0**.
-
----
-
-¿Querés que agregue un workflow de **GitHub Actions** para que el `.exe` se construya solo cuando publiques un release? Te dejo el YAML cuando me digas y lo pegás en `.github/workflows/build-windows.yml`.
