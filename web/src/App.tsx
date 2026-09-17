@@ -277,6 +277,78 @@ function IconCheck() {
   );
 }
 
+function getCardStyle(rect: { top: number; left: number; width: number; height: number } | null): React.CSSProperties {
+  if (!rect) {
+    return { bottom: "20px", right: "20px" };
+  }
+
+  const cardW = 340;
+  const cardH = 200;
+  const margin = 14;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  // En pantallas móviles
+  if (w < 680) {
+    const inTopHalf = rect.top + rect.height / 2 < h / 2;
+    return inTopHalf
+      ? { top: "10px", left: "10px", right: "10px", width: "auto" }
+      : { bottom: "10px", left: "10px", right: "10px", width: "auto" };
+  }
+
+  // Detector de colisión entre el spotlight y la tarjeta
+  const collides = (top: number, left: number) => {
+    return !(
+      top + cardH < rect.top - 4 ||
+      top > rect.top + rect.height + 4 ||
+      left + cardW < rect.left - 4 ||
+      left > rect.left + rect.width + 4
+    );
+  };
+
+  // 1. Debajo del elemento destacado
+  const belowTop = rect.top + rect.height + margin;
+  if (belowTop + cardH <= h - 14) {
+    const left = Math.max(16, Math.min(w - cardW - 16, rect.left + (rect.width - cardW) / 2));
+    if (!collides(belowTop, left)) {
+      return { top: `${belowTop}px`, left: `${left}px` };
+    }
+  }
+
+  // 2. Encima del elemento destacado
+  const aboveTop = rect.top - margin - cardH;
+  if (aboveTop >= 14) {
+    const left = Math.max(16, Math.min(w - cardW - 16, rect.left + (rect.width - cardW) / 2));
+    if (!collides(aboveTop, left)) {
+      return { top: `${aboveTop}px`, left: `${left}px` };
+    }
+  }
+
+  // 3. A la izquierda del elemento
+  const leftPos = rect.left - margin - cardW;
+  if (leftPos >= 16) {
+    const top = Math.max(16, Math.min(h - cardH - 16, rect.top));
+    if (!collides(top, leftPos)) {
+      return { top: `${top}px`, left: `${leftPos}px` };
+    }
+  }
+
+  // 4. A la derecha del elemento
+  const rightPos = rect.left + rect.width + margin;
+  if (rightPos + cardW <= w - 16) {
+    const top = Math.max(16, Math.min(h - cardH - 16, rect.top));
+    if (!collides(top, rightPos)) {
+      return { top: `${top}px`, left: `${rightPos}px` };
+    }
+  }
+
+  // 5. Esquina opuesta
+  if (rect.left > w / 2 - 120) {
+    return { bottom: "20px", left: "20px" };
+  }
+  return { bottom: "20px", right: "20px" };
+}
+
 function BoardLogo({ name, icon, short }: { name: string; icon: string; short: string }) {
   const [failed, setFailed] = useState(false);
 
@@ -878,7 +950,12 @@ export default function App() {
             />
           )}
 
-          <aside className="tour-companion-card" role="region" aria-label="Tutorial guiado">
+          <aside
+            className="tour-companion-card"
+            style={getCardStyle(spotlightRect)}
+            role="region"
+            aria-label="Tutorial guiado"
+          >
             <div className="tour-header">
               <span className="tour-badge">{currentTourStep.badge}</span>
               <button className="tour-close-btn" type="button" onClick={handleCloseTour} title="Cerrar tutorial">

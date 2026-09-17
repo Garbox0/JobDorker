@@ -169,16 +169,15 @@ select { display: block; min-width: 140px; margin-top: 5px; padding: 9px 28px 9p
 .tour-companion-card {
   pointer-events: auto;
   position: fixed;
-  bottom: 20px;
-  right: 22px;
   width: calc(100% - 44px);
-  max-width: 350px;
+  max-width: 340px;
   background: #ffffff;
   border-radius: 15px;
   border: 1px solid #dce4da;
   box-shadow: 0 16px 45px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
   padding: 16px 18px;
   z-index: 1002;
+  transition: top 0.32s cubic-bezier(0.16, 1, 0.3, 1), left 0.32s cubic-bezier(0.16, 1, 0.3, 1), bottom 0.32s cubic-bezier(0.16, 1, 0.3, 1), right 0.32s cubic-bezier(0.16, 1, 0.3, 1);
   animation: cardSlideUp .2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
