@@ -48,55 +48,55 @@ const TOUR_STEPS: TourStep[] = [
   {
     badge: "Paso 1 de 5",
     title: "¿Cómo funciona JobDorker?",
-    description: "La mayoría de las empresas gestionan sus vacantes en sistemas ATS (Greenhouse, Lever, Ashby, etc.) en lugar de portales de empleo generales. JobDorker construye 'Google dorks' para indexar esas ofertas oficiales directo en los servidores de las empresas.",
+    description: "Las empresas gestionan sus vacantes en sistemas ATS directos (Greenhouse, Lever, Ashby, etc.). JobDorker crea consultas de Google avanzadas para indexar esas ofertas oficiales sin intermediarios ni bolsas masivas.",
     tips: [
       "Sin intermediarios: postulás en el formulario real de la empresa.",
-      "Sin cuentas: no requiere registro ni guarda datos en la nube.",
-      "Menos competencia: vacantes que no están republicadas en bolsas masivas.",
+      "Sin cuentas: no requiere registro ni almacena datos en la nube.",
+      "Menos competencia: vacantes directas no republicadas.",
     ],
     targetId: "hero-intro",
   },
   {
     badge: "Paso 2 de 5",
-    title: "Definir el rol y sus variantes",
-    description: "Ingresá el título del puesto. Para ampliar resultados relevantes, agrupá sinónimos en inglés y español con el operador OR y usá comillas dobles para frases exactas.",
+    title: "Definir el rol y sinónimos",
+    description: "Ingresá el título del puesto. Agrupá sinónimos en inglés y español con OR y usá comillas dobles para frases compuestas.",
     tips: [
-      'Ejemplo: "soporte técnico" OR "help desk" OR "service desk"',
-      'Ejemplo: "frontend" OR "react developer" OR "desarrollador web"',
-      "No agregues palabras como 'urgente' o 'busco', solo el nombre del puesto.",
+      'Ejemplo: "soporte técnico" OR "help desk"',
+      'Ejemplo: "frontend" OR "react developer"',
+      "No uses palabras como 'urgente' o 'busco'.",
     ],
     targetId: "search-input-row",
   },
   {
     badge: "Paso 3 de 5",
-    title: "Filtros de ubicación, modalidad y fecha",
-    description: "Acotá por país y modalidad (Remoto, Híbrido, Presencial). En 'Ver más opciones' podés especificar nivel de experiencia, idioma y antigüedad de la publicación.",
+    title: "Filtros de consulta",
+    description: "Acotá por país y modalidad (Remoto, Híbrido, Presencial). En opciones avanzadas podés elegir seniority, idioma y fecha de publicación.",
     tips: [
-      "Para vacantes recién salidas, elegí 'Última semana' o 'Últimas 24 h'.",
-      "Para puestos remotos internacionales, combiná 'Remoto' con idioma 'Inglés'.",
+      "Para vacantes frescas, elegí 'Última semana' o 'Últimas 24 h'.",
+      "Para remoto global, combiná 'Remoto' con idioma 'Inglés'.",
     ],
     targetId: "filters-box",
   },
   {
     badge: "Paso 4 de 5",
-    title: "Portales ATS y acciones por tarjeta",
-    description: "Al buscar, las fuentes se organizan por categoría. Cada tarjeta incluye el logo del portal y cuatro acciones directas:",
+    title: "Portales ATS y acciones",
+    description: "Las fuentes se organizan por categoría. Cada tarjeta incluye el logo del portal y cuatro acciones directas:",
     tips: [
       "Ver ofertas: ejecuta la consulta completa en Google.",
-      "Ver más: relaja los filtros si la consulta estricta trajo pocos resultados.",
+      "Ver más: relaja los filtros si hay pocos resultados.",
       "Copiar dork: copia el texto de la consulta al portapapeles.",
-      "+ Postulación: guarda la vacante en tu tablero con un solo clic.",
+      "+ Postulación: guarda la vacante en tu tablero.",
     ],
     targetId: "results-container",
   },
   {
     badge: "Paso 5 de 5",
-    title: "Tablero de seguimiento y exportación CSV",
-    description: "Llevá el control de tus aplicaciones laborales en un solo lugar. Cambiá el estado de cada postulación conforme avanzan las etapas y descargá la planilla cuando la necesites.",
+    title: "Tablero local y CSV",
+    description: "Llevá el control de tus aplicaciones laborales en un solo lugar. Cambiá el estado de cada vacante y descargá la planilla cuando la necesites.",
     tips: [
-      "Estados: Para revisar, Postulé, Entrevista, Oferta o Cerrada.",
-      "Exportar CSV: descarga una planilla compatible con Excel y Google Sheets.",
-      "100% privado: los registros se guardan únicamente en tu navegador o app.",
+      "Estados: Para revisar, Postulé, Entrevista, Oferta, Cerrada.",
+      "Exportar CSV: descarga una planilla compatible con Excel.",
+      "100% privado: los registros se guardan solo en tu dispositivo.",
     ],
     targetId: "tablero",
   },
@@ -115,9 +115,9 @@ const BOARDS = [
 ];
 
 const SOURCE_GROUPS = [
-  { id: "general", title: "General y empresas directas", description: "Búsquedas amplias en sitios web corporativos y portales abiertos." },
+  { id: "general", title: "General y empresas directas", description: "Búsquedas amplias en sitios corporativos y portales abiertos." },
   { id: "tech", title: "Sistemas ATS y startups", description: "Greenhouse, Lever, Ashby, Get on Board y Wellfound." },
-  { id: "remote", title: "Portales de trabajo remoto", description: "Puestos remotos internacionales sin restricción de sede." },
+  { id: "remote", title: "Portales de trabajo remoto", description: "Puestos remotos internacionales sin restricción geográfica." },
 ];
 
 const SUPPORT_URL = "https://ko-fi.com/cyberquest50";
@@ -211,6 +211,72 @@ function csvCell(value: string) {
   return `"${(value || "").replaceAll('"', '""')}"`;
 }
 
+// Iconos SVG Minimalistas
+function IconHelp() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+function IconClipboard() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+    </svg>
+  );
+}
+
+function IconBookmark() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function IconPin() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
+}
+
+function IconCalendar() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
+
+function IconEmptyTarget() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#24583f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </svg>
+  );
+}
+
+function IconCheck() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#173d2c" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
 function BoardLogo({ name, icon, short }: { name: string; icon: string; short: string }) {
   const [failed, setFailed] = useState(false);
 
@@ -275,7 +341,6 @@ export default function App() {
 
     const currentStep = TOUR_STEPS[tourStep];
 
-    // Acciones dinámicas según el paso para mostrar la UI real
     if (tourStep === 2) {
       setShowFilters(true);
     } else if (tourStep === 3) {
@@ -290,7 +355,7 @@ export default function App() {
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         const rect = el.getBoundingClientRect();
-        const padding = 12;
+        const padding = 10;
         setSpotlightRect({
           top: Math.max(0, rect.top - padding),
           left: Math.max(0, rect.left - padding),
@@ -502,13 +567,16 @@ export default function App() {
         </a>
         <div className="topbar-actions">
           <button className="tour-trigger-btn" type="button" onClick={handleOpenTour} title="Ver tutorial interactivo">
-            💡 Tutorial
+            <IconHelp />
+            <span>Tutorial</span>
           </button>
           <a className="nav-pill" href="#tablero">
-            📋 {applications.length} {applications.length === 1 ? "postulación" : "postulaciones"}
+            <IconClipboard />
+            <span>{applications.length} {applications.length === 1 ? "postulación" : "postulaciones"}</span>
           </a>
           <span className="saved-count">
-            🔖 {savedSearches.length} {savedSearches.length === 1 ? "guardada" : "guardadas"}
+            <IconBookmark />
+            <span>{savedSearches.length} {savedSearches.length === 1 ? "guardada" : "guardadas"}</span>
           </span>
           <a className="support-link" href={SUPPORT_URL} target="_blank" rel="noreferrer" onClick={(event) => handleExternalLink(event, SUPPORT_URL)}>
             <img src={KOFI_BADGE_URL} alt="Apoyar JobDorker en Ko-fi" />
@@ -720,7 +788,9 @@ export default function App() {
 
         {applications.length === 0 ? (
           <div className="empty-tracker">
-            <span className="empty-tracker-icon">📌</span>
+            <div className="empty-tracker-icon-wrap">
+              <IconEmptyTarget />
+            </div>
             <h3>Sin postulaciones registradas</h3>
             <p>
               Registrá una oportunidad manualmente o hacé clic en <strong>+ Postulación</strong> en cualquiera de las tarjetas de búsqueda.
@@ -745,8 +815,8 @@ export default function App() {
                 </div>
 
                 <div className="app-card-meta">
-                  <span>📍 {app.source}</span>
-                  <span>📅 {app.date}</span>
+                  <span><IconPin /> {app.source}</span>
+                  <span><IconCalendar /> {app.date}</span>
                 </div>
 
                 <div className="app-card-footer">
@@ -822,7 +892,7 @@ export default function App() {
             <ul className="tour-tips">
               {currentTourStep.tips.map((tip, idx) => (
                 <li key={idx}>
-                  <span className="tip-bullet">✓</span>
+                  <span className="tip-bullet"><IconCheck /></span>
                   <span>{tip}</span>
                 </li>
               ))}

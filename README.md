@@ -6,7 +6,7 @@
 
 ---
 
-## 🚀 Ediciones de JobDorker
+## Ediciones de JobDorker
 
 | Característica | Versión Web & Desktop (`web/`) | Versión Clásica (`JobDorker_MVP_v2/`) |
 | :--- | :--- | :--- |
@@ -29,13 +29,13 @@
   * Guardá tus postulaciones con empresa, puesto, portal, enlace, fecha y estado (*Para revisar*, *Postulé*, *Entrevista*, *Oferta*, *Cerrada*).
   * Filtro interactivo por estado.
   * **Exportación a CSV**: descargá tu planilla de seguimiento en cualquier momento.
-* **Búsquedas guardadas**: volvé a consultar tus roles favoritos con un solo clic.
+* **Búsquedas guardadas**: volvé a consultar tus roles frecuentes con un solo clic.
 * **Asistente IA opcional** (en versión Python): analiza CVs u ofertas mediante endpoints compatibles con OpenAI, sin almacenar la clave en disco y solicitando `store: false`.
 * **Aporte voluntario por Ko-fi**: ninguna función depende de donar; el proyecto es 100% libre y de código abierto.
 
 ---
 
-## 💻 Desarrollo y ejecución
+## Desarrollo y ejecución
 
 ### Opción A: Versión moderna Web & Desktop (`web/`)
 
@@ -75,7 +75,7 @@ El binario se generará en `JobDorker_MVP_v2\dist\JobDorker.exe`.
 
 ---
 
-## 🧪 Pruebas unitarias
+## Pruebas unitarias
 
 Desde la raíz del repositorio:
 
@@ -85,7 +85,7 @@ python -m unittest discover -s tests
 
 ---
 
-## 🔒 Privacidad por diseño
+## Privacidad por diseño
 
 JobDorker no incluye telemetría intrusiva, rastreadores ni requiere registro.
 - En la versión Web, los datos del tablero y las búsquedas se guardan exclusivamente en el `localStorage` de tu navegador o WebView.
@@ -94,14 +94,16 @@ JobDorker no incluye telemetría intrusiva, rastreadores ni requiere registro.
 
 ---
 
-## ☕ Aportes voluntarios
+## Aportes voluntarios
 
 JobDorker es y seguirá siendo gratuito y de código abierto. Si te resulta de ayuda en tu búsqueda y querés apoyar el proyecto:
 
-[![Apoyar en Ko-fi](https://storage.ko-fi.com/cdn/kofi5.png?v=6)](https://ko-fi.com/cyberquest50)
+<a href="https://ko-fi.com/cyberquest50" target="_blank" rel="noreferrer">
+  <img src="https://storage.ko-fi.com/cdn/kofi5.png?v=6" height="34" alt="Apoyar en Ko-fi" />
+</a>
 
 ---
 
-## 🧾 Licencia
+## Licencia
 
 Distribuido bajo licencia **MIT**. Ver archivo `LICENSE` para más detalles.
