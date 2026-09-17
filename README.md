@@ -98,9 +98,7 @@ JobDorker no incluye telemetría intrusiva, rastreadores ni requiere registro.
 
 JobDorker es y seguirá siendo gratuito y de código abierto. Si te resulta de ayuda en tu búsqueda y querés apoyar el proyecto:
 
-<a href="https://ko-fi.com/cyberquest50" target="_blank" rel="noreferrer">
-  <img src="https://storage.ko-fi.com/cdn/kofi5.png?v=6" height="34" alt="Apoyar en Ko-fi" />
-</a>
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y5Z4271CHS)
 
 ---
 
