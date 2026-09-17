@@ -139,26 +139,64 @@ select { display: block; min-width: 145px; margin-top: 5px; padding: 9px 30px 9p
 .saved-list span { font-weight: 730; }
 .saved-list small { color: #68746a; }
 
-/* Modal del Tutorial Guiado */
-.tour-overlay { position: fixed; inset: 0; background: rgba(18, 28, 20, 0.65); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; animation: tourFadeIn .2s ease; }
-@keyframes tourFadeIn { from { opacity: 0; } to { opacity: 1; } }
-.tour-modal { width: 100%; max-width: 560px; background: #ffffff; border-radius: 20px; border: 1px solid #dce4da; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.22); padding: 30px; position: relative; animation: tourScaleIn .2s ease; }
-@keyframes tourScaleIn { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-.tour-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+/* Tutorial Guiado Dinámico y Acompañante (Sin blur, Spotlight real) */
+.tour-companion-layer { position: fixed; inset: 0; pointer-events: none; z-index: 1000; }
+
+.tour-spotlight-cutout {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 16px;
+  box-shadow: 0 0 0 9999px rgba(16, 25, 18, 0.46), 0 0 0 3px #173d2c, 0 10px 40px rgba(23, 61, 44, 0.4);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 1001;
+  animation: spotlightPulse 2.2s infinite ease-in-out;
+}
+
+@keyframes spotlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 9999px rgba(16, 25, 18, 0.46), 0 0 0 3px #173d2c, 0 8px 30px rgba(23, 61, 44, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 9999px rgba(16, 25, 18, 0.46), 0 0 0 3.5px #276848, 0 12px 42px rgba(23, 61, 44, 0.55);
+  }
+}
+
+.tour-companion-card {
+  pointer-events: auto;
+  position: fixed;
+  bottom: 26px;
+  right: 28px;
+  width: calc(100% - 56px);
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #dce4da;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  padding: 22px 24px;
+  z-index: 1002;
+  animation: cardSlideUp .22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardSlideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.tour-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .tour-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; background: #e9f2e7; color: #173d2c; font-size: .75rem; font-weight: 750; letter-spacing: .03em; text-transform: uppercase; }
-.tour-close-btn { border: 0; background: transparent; color: #728074; font-size: 1.1rem; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; cursor: pointer; transition: all .15s ease; }
+.tour-close-btn { border: 0; background: transparent; color: #728074; font-size: 1.1rem; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; cursor: pointer; transition: all .15s ease; }
 .tour-close-btn:hover { background: #f0f4ef; color: #182219; }
-.tour-title { margin: 0 0 10px; color: #162419; font-size: 1.38rem; font-weight: 760; letter-spacing: -.03em; line-height: 1.25; }
-.tour-desc { margin: 0 0 18px; color: #4f5d51; font-size: .94rem; line-height: 1.55; }
-.tour-tips { list-style: none; margin: 0 0 26px; padding: 16px; background: #f7faf6; border-radius: 12px; border: 1px solid #e1e9df; display: flex; flex-direction: column; gap: 10px; }
-.tour-tips li { display: flex; align-items: flex-start; gap: 10px; color: #2c392f; font-size: .84rem; line-height: 1.45; }
-.tip-bullet { color: #173d2c; font-weight: 900; font-size: 1rem; line-height: 1; }
-.tour-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 18px; border-top: 1px solid #ebf1ea; }
+.tour-title { margin: 0 0 8px; color: #162419; font-size: 1.25rem; font-weight: 760; letter-spacing: -.03em; line-height: 1.25; }
+.tour-desc { margin: 0 0 14px; color: #4f5d51; font-size: .88rem; line-height: 1.5; }
+.tour-tips { list-style: none; margin: 0 0 20px; padding: 12px 14px; background: #f7faf6; border-radius: 10px; border: 1px solid #e1e9df; display: flex; flex-direction: column; gap: 8px; }
+.tour-tips li { display: flex; align-items: flex-start; gap: 8px; color: #2c392f; font-size: .8rem; line-height: 1.4; }
+.tip-bullet { color: #173d2c; font-weight: 900; font-size: .85rem; line-height: 1.3; }
+.tour-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 14px; border-top: 1px solid #ebf1ea; }
 .tour-dots { display: flex; gap: 6px; align-items: center; }
-.tour-dot { width: 8px; height: 8px; border-radius: 999px; background: #d0dcd0; transition: all .2s ease; }
-.tour-dot.active { width: 22px; background: #173d2c; }
+.tour-dot { width: 8px; height: 8px; border: 0; padding: 0; border-radius: 999px; background: #d0dcd0; cursor: pointer; transition: all .2s ease; }
+.tour-dot.active { width: 20px; background: #173d2c; }
 .tour-nav-buttons { display: flex; align-items: center; gap: 8px; }
-.tour-btn { min-height: 38px; padding: 0 14px; border-radius: 8px; font-size: .82rem; font-weight: 720; cursor: pointer; transition: all .15s ease; }
+.tour-btn { min-height: 36px; padding: 0 13px; border-radius: 8px; font-size: .8rem; font-weight: 720; cursor: pointer; transition: all .15s ease; }
 .tour-skip { border: 0; background: transparent; color: #6a776c; }
 .tour-skip:hover { color: #18241b; background: #f3f6f2; }
 .tour-prev { border: 1px solid #cfe0cf; background: #fff; color: #244c34; }
@@ -198,8 +236,8 @@ footer span:first-child { color: #2d3a30; font-weight: 760; }
   .app-card-footer { flex-direction: column; align-items: stretch; gap: 8px; }
   .app-card-actions { justify-content: flex-end; }
   .saved-section { grid-template-columns: 1fr; gap: 18px; padding-top: 40px; }
-  .tour-modal { padding: 20px; }
-  .tour-footer { flex-direction: column-reverse; align-items: stretch; gap: 14px; }
+  .tour-companion-card { bottom: 12px; right: 12px; left: 12px; width: auto; max-width: none; padding: 16px; }
+  .tour-footer { flex-direction: column-reverse; align-items: stretch; gap: 12px; }
   .tour-dots { justify-content: center; }
   .tour-nav-buttons { justify-content: stretch; }
   .tour-nav-buttons button { flex: 1; }

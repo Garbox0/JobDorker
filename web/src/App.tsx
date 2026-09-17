@@ -41,60 +41,62 @@ type TourStep = {
   title: string;
   description: string;
   tips: string[];
-  targetId?: string;
+  targetId: string;
 };
 
 const TOUR_STEPS: TourStep[] = [
   {
     badge: "Paso 1 de 5",
     title: "¿Cómo funciona JobDorker?",
-    description: "La mayoría de las empresas gestionan sus vacantes en sistemas ATS (Greenhouse, Lever, Ashby, etc.) en lugar de portales de empleo generales. JobDorker construye 'Google dorks' (consultas avanzadas con operadores como inurl: y site:) para encontrar esas páginas oficiales directo en los servidores de las empresas.",
+    description: "La mayoría de las empresas gestionan sus vacantes en sistemas ATS (Greenhouse, Lever, Ashby, etc.) en lugar de portales de empleo generales. JobDorker construye 'Google dorks' para indexar esas ofertas oficiales directo en los servidores de las empresas.",
     tips: [
       "Sin intermediarios: postulás en el formulario real de la empresa.",
-      "Sin cuentas obligatorias: no requiere login ni guarda tus datos en la nube.",
-      "Menos ruido: encontrás puestos que no están republicados en bolsas masivas.",
+      "Sin cuentas: no requiere registro ni guarda datos en la nube.",
+      "Menos competencia: vacantes que no están republicadas en bolsas masivas.",
     ],
+    targetId: "hero-intro",
   },
   {
     badge: "Paso 2 de 5",
     title: "Definir el rol y sus variantes",
-    description: "Escribí el título del puesto. Para obtener mejores resultados, agrupá sinónimos y términos en inglés/español usando el operador OR y comillas dobles para frases exactas.",
+    description: "Ingresá el título del puesto. Para ampliar resultados relevantes, agrupá sinónimos en inglés y español con el operador OR y usá comillas dobles para frases exactas.",
     tips: [
       'Ejemplo: "soporte técnico" OR "help desk" OR "service desk"',
       'Ejemplo: "frontend" OR "react developer" OR "desarrollador web"',
       "No agregues palabras como 'urgente' o 'busco', solo el nombre del puesto.",
     ],
-    targetId: "role",
+    targetId: "search-input-row",
   },
   {
     badge: "Paso 3 de 5",
     title: "Filtros de ubicación, modalidad y fecha",
-    description: "Podés acotar por país y tipo de jornada (Remoto, Híbrido, Presencial). En 'Ver más opciones' podés especificar nivel de experiencia (Junior, Senior, etc.), idioma y antigüedad de la publicación.",
+    description: "Acotá por país y modalidad (Remoto, Híbrido, Presencial). En 'Ver más opciones' podés especificar nivel de experiencia, idioma y antigüedad de la publicación.",
     tips: [
-      "Si querés ver solo vacantes frescas, elegí 'Última semana' o 'Últimas 24 h'.",
-      "Para vacantes internacionales de trabajo remoto, combiná 'Remoto' con idioma 'Inglés'.",
+      "Para vacantes recién salidas, elegí 'Última semana' o 'Últimas 24 h'.",
+      "Para puestos remotos internacionales, combiná 'Remoto' con idioma 'Inglés'.",
     ],
-    targetId: "inicio",
+    targetId: "filters-box",
   },
   {
     badge: "Paso 4 de 5",
-    title: "Acciones en las tarjetas de resultados",
-    description: "Al buscar, las fuentes se organizan por categoría (General, Tech, Remoto). Cada tarjeta ofrece cuatro acciones concretas:",
+    title: "Portales ATS y acciones por tarjeta",
+    description: "Al buscar, las fuentes se organizan por categoría. Cada tarjeta incluye el logo del portal y cuatro acciones directas:",
     tips: [
-      "Ver ofertas: abre Google con los filtros y operadores listos.",
-      "Ver más: consulta más amplia por si la búsqueda estricta arrojó pocos resultados.",
-      "Copiar dork: copia la cadena de texto exacta para modificarla a mano en Google.",
-      "+ Postulación: traslada el puesto y portal a tu tablero con un clic.",
+      "Ver ofertas: ejecuta la consulta completa en Google.",
+      "Ver más: relaja los filtros si la consulta estricta trajo pocos resultados.",
+      "Copiar dork: copia el texto de la consulta al portapapeles.",
+      "+ Postulación: guarda la vacante en tu tablero con un solo clic.",
     ],
+    targetId: "results-container",
   },
   {
     badge: "Paso 5 de 5",
-    title: "Tablero de seguimiento y exportación a CSV",
+    title: "Tablero de seguimiento y exportación CSV",
     description: "Llevá el control de tus aplicaciones laborales en un solo lugar. Cambiá el estado de cada postulación conforme avanzan las etapas y descargá la planilla cuando la necesites.",
     tips: [
-      "Estados claros: Para revisar, Postulé, Entrevista, Oferta o Cerrada.",
-      "Exportar CSV: genera una planilla compatible con Microsoft Excel y Google Sheets.",
-      "Privacidad: los registros quedan guardados localmente en tu navegador.",
+      "Estados: Para revisar, Postulé, Entrevista, Oferta o Cerrada.",
+      "Exportar CSV: descarga una planilla compatible con Excel y Google Sheets.",
+      "100% privado: los registros se guardan únicamente en tu navegador o app.",
     ],
     targetId: "tablero",
   },
@@ -244,9 +246,10 @@ export default function App() {
   const [trackerError, setTrackerError] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("Todas");
 
-  // Tutorial guiado
+  // Tutorial guiado dinámico
   const [tourOpen, setTourOpen] = useState(false);
   const [tourStep, setTourStep] = useState(0);
+  const [spotlightRect, setSpotlightRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
   useEffect(() => {
     const seen = localStorage.getItem("jobdorker:tour-seen");
@@ -262,6 +265,54 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("jobdorker:applications", JSON.stringify(applications));
   }, [applications]);
+
+  // Actualizador dinámico del foco del tutorial (Spotlight)
+  useEffect(() => {
+    if (!tourOpen) {
+      setSpotlightRect(null);
+      return;
+    }
+
+    const currentStep = TOUR_STEPS[tourStep];
+
+    // Acciones dinámicas según el paso para mostrar la UI real
+    if (tourStep === 2) {
+      setShowFilters(true);
+    } else if (tourStep === 3) {
+      if (!filters.role.trim()) {
+        setFilters((prev) => ({ ...prev, role: "soporte técnico" }));
+      }
+      setSearched(true);
+    }
+
+    function updateSpotlight() {
+      const el = document.getElementById(currentStep.targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        const rect = el.getBoundingClientRect();
+        const padding = 12;
+        setSpotlightRect({
+          top: Math.max(0, rect.top - padding),
+          left: Math.max(0, rect.left - padding),
+          width: rect.width + padding * 2,
+          height: rect.height + padding * 2,
+        });
+      } else {
+        setSpotlightRect(null);
+      }
+    }
+
+    const timer = setTimeout(updateSpotlight, 140);
+
+    window.addEventListener("resize", updateSpotlight);
+    window.addEventListener("scroll", updateSpotlight, { passive: true });
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateSpotlight);
+      window.removeEventListener("scroll", updateSpotlight);
+    };
+  }, [tourOpen, tourStep, searched, filters.role]);
 
   const results = useMemo(
     () => BOARDS.map((board) => {
@@ -418,11 +469,7 @@ export default function App() {
   // Métodos del Tutorial
   function handleNextTour() {
     if (tourStep < TOUR_STEPS.length - 1) {
-      const next = tourStep + 1;
-      setTourStep(next);
-      if (TOUR_STEPS[next].targetId) {
-        document.getElementById(TOUR_STEPS[next].targetId!)?.scrollIntoView({ behavior: "smooth" });
-      }
+      setTourStep((prev) => prev + 1);
     } else {
       handleCloseTour();
     }
@@ -430,11 +477,7 @@ export default function App() {
 
   function handlePrevTour() {
     if (tourStep > 0) {
-      const prev = tourStep - 1;
-      setTourStep(prev);
-      if (TOUR_STEPS[prev].targetId) {
-        document.getElementById(TOUR_STEPS[prev].targetId!)?.scrollIntoView({ behavior: "smooth" });
-      }
+      setTourStep((prev) => prev - 1);
     }
   }
 
@@ -458,7 +501,7 @@ export default function App() {
           <span>JobDorker</span>
         </a>
         <div className="topbar-actions">
-          <button className="tour-trigger-btn" type="button" onClick={handleOpenTour} title="Ver tutorial guiado">
+          <button className="tour-trigger-btn" type="button" onClick={handleOpenTour} title="Ver tutorial interactivo">
             💡 Tutorial
           </button>
           <a className="nav-pill" href="#tablero">
@@ -474,39 +517,43 @@ export default function App() {
       </header>
 
       <section className="hero" id="inicio">
-        <p className="eyebrow">CONSULTAS GOOGLE EN SISTEMAS ATS</p>
-        <h1>Búsquedas directas<br /><em>en las empresas.</em></h1>
-        <p className="hero-copy">Generá dorks de Google para indexar vacantes en portales ATS oficiales (Greenhouse, Lever, Ashby y más) sin intermediarios ni publicaciones duplicadas.</p>
+        <div className="hero-intro" id="hero-intro">
+          <p className="eyebrow">CONSULTAS GOOGLE EN SISTEMAS ATS</p>
+          <h1>Búsquedas directas<br /><em>en las empresas.</em></h1>
+          <p className="hero-copy">Generá dorks de Google para indexar vacantes en portales ATS oficiales (Greenhouse, Lever, Ashby y más) sin intermediarios ni publicaciones duplicadas.</p>
+        </div>
 
         <form className="search-card" onSubmit={search}>
           <label htmlFor="role">Puesto o rol a buscar</label>
-          <div className="main-search-row">
+          <div className="main-search-row" id="search-input-row">
             <input id="role" value={filters.role} onChange={(event) => update("role", event.target.value)} placeholder="Ej. soporte técnico, plomero, qa automation, analista de datos" autoComplete="off" />
             <button className="primary-button" type="submit">Generar búsquedas <span>→</span></button>
           </div>
           {error && <p className="form-error" role="alert">{error}</p>}
-          <div className="quick-filters">
-            <label>Ubicación geográfica
-              <select value={filters.location} onChange={(event) => update("location", event.target.value)}>
-                <option>Cualquiera</option><option>Argentina</option><option>Chile</option><option>Colombia</option><option>México</option><option>Uruguay</option><option>Remoto</option>
-              </select>
-            </label>
-            <label>Modalidad de trabajo
-              <select value={filters.modality} onChange={(event) => update("modality", event.target.value)}>
-                <option>Remoto</option><option>Híbrido</option><option>Presencial</option><option>Cualquiera</option>
-              </select>
-            </label>
-            <button className="text-button" type="button" onClick={() => setShowFilters((visible) => !visible)}>{showFilters ? "Ocultar filtros avanzados" : "Ver más opciones"}</button>
+          <div className="filters-box" id="filters-box">
+            <div className="quick-filters">
+              <label>Ubicación geográfica
+                <select value={filters.location} onChange={(event) => update("location", event.target.value)}>
+                  <option>Cualquiera</option><option>Argentina</option><option>Chile</option><option>Colombia</option><option>México</option><option>Uruguay</option><option>Remoto</option>
+                </select>
+              </label>
+              <label>Modalidad de trabajo
+                <select value={filters.modality} onChange={(event) => update("modality", event.target.value)}>
+                  <option>Remoto</option><option>Híbrido</option><option>Presencial</option><option>Cualquiera</option>
+                </select>
+              </label>
+              <button className="text-button" type="button" onClick={() => setShowFilters((visible) => !visible)}>{showFilters ? "Ocultar filtros avanzados" : "Ver más opciones"}</button>
+            </div>
+            {showFilters && <div className="advanced-filters">
+              <label>Nivel de experiencia<select value={filters.seniority} onChange={(event) => update("seniority", event.target.value)}><option>Cualquiera</option><option>Junior</option><option>Semi Senior</option><option>Senior</option><option>Lead</option></select></label>
+              <label>Idioma de la publicación<select value={filters.language} onChange={(event) => update("language", event.target.value)}><option>Cualquiera</option><option>Español</option><option>Inglés</option><option>Portugués</option></select></label>
+              <label>Fecha de publicación<select value={filters.recent} onChange={(event) => update("recent", event.target.value)}><option>Cualquiera</option><option>Últimas 24 h</option><option>Última semana</option><option>Último mes</option></select></label>
+            </div>}
           </div>
-          {showFilters && <div className="advanced-filters">
-            <label>Nivel de experiencia<select value={filters.seniority} onChange={(event) => update("seniority", event.target.value)}><option>Cualquiera</option><option>Junior</option><option>Semi Senior</option><option>Senior</option><option>Lead</option></select></label>
-            <label>Idioma de la publicación<select value={filters.language} onChange={(event) => update("language", event.target.value)}><option>Cualquiera</option><option>Español</option><option>Inglés</option><option>Portugués</option></select></label>
-            <label>Fecha de publicación<select value={filters.recent} onChange={(event) => update("recent", event.target.value)}><option>Cualquiera</option><option>Últimas 24 h</option><option>Última semana</option><option>Último mes</option></select></label>
-          </div>}
         </form>
       </section>
 
-      <section className="results-section" aria-live="polite">
+      <section className="results-section" id="results-container" aria-live="polite">
         {!searched ? <div className="empty-state"><span className="empty-icon">⌁</span><h2>Escribí un rol para comenzar</h2><p>Generaremos las consultas de Google adaptadas a cada sistema de empleo.</p></div> : <>
           <div className="results-heading">
             <div><p className="eyebrow">PORTALES ATS Y FUENTES</p><h2>Consultas para {filters.role}</h2><p className="route-explainer">Hacé clic en <strong>Ver ofertas</strong> para abrir los resultados en Google. Si la búsqueda es muy estricta, usá <strong>Ver más</strong>.</p></div>
@@ -746,24 +793,36 @@ export default function App() {
 
       {savedSearches.length > 0 && <section className="saved-section"><div><p className="eyebrow">HISTORIAL</p><h2>Búsquedas guardadas</h2><p>Acceso directo para volver a consultar roles frecuentes.</p></div><div className="saved-list">{savedSearches.slice(0, 4).map((item) => <button key={item.id} onClick={() => { setFilters(item); setSearched(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}><span>{item.role}</span><small>{item.location} · {item.modality}</small></button>)}</div></section>}
 
-      {/* Modal de Tutorial Guiado */}
+      {/* Tutorial Guiado Dinámico y Acompañante */}
       {tourOpen && (
-        <div className="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-title">
-          <div className="tour-modal">
+        <div className="tour-companion-layer">
+          {spotlightRect && (
+            <div
+              className="tour-spotlight-cutout"
+              style={{
+                top: `${spotlightRect.top}px`,
+                left: `${spotlightRect.left}px`,
+                width: `${spotlightRect.width}px`,
+                height: `${spotlightRect.height}px`,
+              }}
+            />
+          )}
+
+          <aside className="tour-companion-card" role="region" aria-label="Tutorial guiado">
             <div className="tour-header">
               <span className="tour-badge">{currentTourStep.badge}</span>
-              <button className="tour-close-btn" type="button" onClick={handleCloseTour} aria-label="Cerrar tutorial">
+              <button className="tour-close-btn" type="button" onClick={handleCloseTour} title="Cerrar tutorial">
                 ✕
               </button>
             </div>
 
-            <h2 id="tour-title" className="tour-title">{currentTourStep.title}</h2>
+            <h2 className="tour-title">{currentTourStep.title}</h2>
             <p className="tour-desc">{currentTourStep.description}</p>
 
             <ul className="tour-tips">
               {currentTourStep.tips.map((tip, idx) => (
                 <li key={idx}>
-                  <span className="tip-bullet">•</span>
+                  <span className="tip-bullet">✓</span>
                   <span>{tip}</span>
                 </li>
               ))}
@@ -772,9 +831,12 @@ export default function App() {
             <div className="tour-footer">
               <div className="tour-dots">
                 {TOUR_STEPS.map((_, idx) => (
-                  <span
+                  <button
                     key={idx}
+                    type="button"
                     className={`tour-dot ${idx === tourStep ? "active" : ""}`}
+                    onClick={() => setTourStep(idx)}
+                    title={`Paso ${idx + 1}`}
                   />
                 ))}
               </div>
@@ -800,11 +862,11 @@ export default function App() {
                   type="button"
                   onClick={handleNextTour}
                 >
-                  {tourStep === TOUR_STEPS.length - 1 ? "Comenzar" : "Siguiente →"}
+                  {tourStep === TOUR_STEPS.length - 1 ? "Finalizar" : "Siguiente →"}
                 </button>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
       )}
 
