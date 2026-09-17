@@ -11,10 +11,26 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import webbrowser
 import subprocess
+import queue
+import threading
+from datetime import datetime
 from urllib.parse import quote_plus, urlparse
 
+from ai_assistant import (
+    DEFAULT_OPENAI_CHAT_ENDPOINT,
+    TASKS as AI_TASKS,
+    AIConfigurationError,
+    AIRequestError,
+    AIResponseError,
+    request_job_assistance,
+    validate_configuration,
+)
+
 APP_TITLE = "JobDorker – Búsquedas avanzadas de empleo · Garbox0"
+APP_VERSION = "2.0.0"
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".jobdorker.json")
+KOFI_URL = "https://ko-fi.com/cyberquest50"
+OPPORTUNITY_STATUSES = ["Vista", "Para postular", "Postulada", "Entrevista", "Cerrada"]
 
 # ---------- visor embebido ----------
 def _run_viewer(url: str):
@@ -283,9 +299,15 @@ class App(tk.Tk):
             "Rojo": "#dc2626",   # nuevo para combinar con el logo
         }
         self._custom_boards = []
+        self._opportunities = []
+        self._opportunity_order = []
         self._current_dorks = []
         self._cards_cols = 0
         self._custom_expanded = False
+        self._tracker_expanded = False
+        self._ai_expanded = False
+        self._ai_running = False
+        self._ai_queue = queue.Queue()
         self._active_view = "dorks"
         self._wheel_target = None
         self._has_run = False  # chips ocultos hasta ejecutar
@@ -375,6 +397,11 @@ class App(tk.Tk):
 
         if hasattr(self, "dorks_canvas"): self._style_canvas(self.dorks_canvas)
         if hasattr(self, "cards_canvas"): self._style_canvas(self.cards_canvas)
+        if hasattr(self, "lst_opportunities"):
+            self.lst_opportunities.configure(bg=entry_bg, fg=fg, selectbackground=accent)
+        for widget_name, background in (("txt_ai_input", entry_bg), ("txt_ai_result", preview_bg)):
+            if hasattr(self, widget_name):
+                getattr(self, widget_name).configure(bg=background, fg=fg, insertbackground=fg)
 
         if hasattr(self, "_ph_active") and hasattr(self, "ent_rol"):
             if self._ph_active:
@@ -397,19 +424,50 @@ class App(tk.Tk):
             if os.path.exists(CONFIG_PATH):
                 with open(CONFIG_PATH, "r", encoding="utf-8") as f: data = json.load(f)
                 self._custom_boards = data.get("custom_boards", [])
+                raw_opportunities = data.get("opportunities", [])
+                if not isinstance(raw_opportunities, list): raw_opportunities = []
+                self._opportunities = [item for item in raw_opportunities
+                                       if isinstance(item, dict) and str(item.get("title", "")).strip()]
                 self._accent_name = data.get("accent","Azul")
+                ai_settings = data.get("ai", {})
+                if isinstance(ai_settings, dict) and hasattr(self, "ent_ai_endpoint"):
+                    self.ent_ai_endpoint.delete(0, "end")
+                    self.ent_ai_endpoint.insert(0, str(ai_settings.get("endpoint", DEFAULT_OPENAI_CHAT_ENDPOINT)))
+                    self.ent_ai_model.delete(0, "end")
+                    self.ent_ai_model.insert(0, str(ai_settings.get("model", "gpt-5")))
                 if data.get("theme","dark") != self._theme_name: self._setup_theme(data.get("theme"))
                 if hasattr(self, "cmb_accent"):
                     try: self.cmb_accent.set(self._accent_name)
                     except Exception: pass
                 self.lst_boards.delete(0,"end")
                 for lbl, filt in self._custom_boards: self.lst_boards.insert("end", f"{lbl}  —  {filt}")
+                self._refresh_opportunities_list()
         except Exception: pass
 
     def _save_config(self):
         try:
+            ai_endpoint = DEFAULT_OPENAI_CHAT_ENDPOINT
+            ai_model = "gpt-5"
+            if hasattr(self, "ent_ai_endpoint"):
+                try:
+                    ai_endpoint, _, ai_model = validate_configuration(
+                        self.ent_ai_endpoint.get().strip(),
+                        "configuration-check",
+                        self.ent_ai_model.get().strip(),
+                    )
+                except AIConfigurationError:
+                    pass
             with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-                json.dump({"custom_boards": self._custom_boards, "theme": self._theme_name, "accent": self._accent_name}, f, ensure_ascii=False, indent=2)
+                json.dump({
+                    "custom_boards": self._custom_boards,
+                    "opportunities": self._opportunities,
+                    "theme": self._theme_name,
+                    "accent": self._accent_name,
+                    "ai": {
+                        "endpoint": ai_endpoint,
+                        "model": ai_model,
+                    },
+                }, f, ensure_ascii=False, indent=2)
         except Exception: pass
 
     # ----- UI -----
@@ -437,6 +495,9 @@ class App(tk.Tk):
         self.cmb_accent = ttk.Combobox(right, state="readonly", values=list(self._accent_options.keys()), width=9, style="App.TCombobox")
         self.cmb_accent.set(self._accent_name)
         self.cmb_accent.pack(side="left"); self.cmb_accent.bind("<<ComboboxSelected>>", self._on_accent_change)
+        support = ttk.Button(right, text="☕ Apoyar en Ko-fi", style="Secondary.TButton", command=self._open_kofi)
+        support.pack(side="left", padx=(12,0))
+        Tooltip(support, "Aporte voluntario. JobDorker siempre es gratis y no requiere cuenta.")
 
         frm = ttk.Frame(self); frm.pack(fill="both", expand=True)
 
@@ -505,12 +566,15 @@ class App(tk.Tk):
         # Acciones
         btns = ttk.Frame(frm, style="Panel.TFrame")
         btns.grid(row=r, column=0, columnspan=4, sticky="we", padx=10, pady=(0,8))
-        for c in range(3): btns.columnconfigure(c, weight=1)
+        for c in range(5): btns.columnconfigure(c, weight=1)
         b1 = ttk.Button(btns, text="🧠  Generar dorks", style="Primary.TButton", command=self.on_generar)
         b2 = ttk.Button(btns, text="🧭  Búsqueda web (mosaicos)", style="Primary.TButton", command=self.on_buscar)
-        b3 = ttk.Button(btns, text="🧽  Limpiar formulario", style="Secondary.TButton", command=self.on_clear)
-        b1.grid(row=0, column=0, sticky="we", padx=8, pady=8); b2.grid(row=0, column=1, sticky="we", padx=8, pady=8); b3.grid(row=0, column=2, sticky="we", padx=8, pady=8)
-        for btn in (b1,b2,b3):
+        b3 = ttk.Button(btns, text="📌  Ofertas", style="Secondary.TButton", command=self._toggle_tracker)
+        b4 = ttk.Button(btns, text="✨  Asistente", style="Secondary.TButton", command=self._toggle_ai)
+        b5 = ttk.Button(btns, text="🧽  Limpiar", style="Secondary.TButton", command=self.on_clear)
+        for column, button in enumerate((b1, b2, b3, b4, b5)):
+            button.grid(row=0, column=column, sticky="we", padx=8, pady=8)
+        for btn in (b1, b2, b3, b4, b5):
             btn.bind("<Enter>", lambda e, w=btn: w.configure(cursor="hand2"))
             btn.bind("<Leave>", lambda e, w=btn: w.configure(cursor=""))
 
@@ -529,6 +593,7 @@ class App(tk.Tk):
         self.btn_custom_toggle.pack(side="left")
         r+=1
 
+        self.custom_row = r
         self.custom = ttk.Frame(frm, style="Panel.TFrame")
         for c in range(6): self.custom.columnconfigure(c, weight=(0 if c<4 else 1))
         ttk.Label(self.custom, text="Nombre").grid(row=0, column=0, sticky="w", padx=(6,4), pady=(2,0))
@@ -552,8 +617,74 @@ class App(tk.Tk):
         self.cmb_board_filter.bind("<KeyRelease>", on_filter_change)
         self.ent_board_name.bind("<KeyRelease>", on_filter_change)
 
+        r += 1
+        self.tracker_row = r
+        self.tracker = ttk.Frame(frm, style="Panel.TFrame")
+        for c in range(5): self.tracker.columnconfigure(c, weight=(1 if c in (1, 3) else 0))
+        ttk.Label(self.tracker, text="Puesto / empresa").grid(row=0, column=0, sticky="w", padx=(6,4), pady=(4,0))
+        self.ent_opportunity_title = ttk.Entry(self.tracker, style="App.TEntry", width=30)
+        self.ent_opportunity_title.grid(row=0, column=1, sticky="we", padx=(0,12), pady=(4,0))
+        ttk.Label(self.tracker, text="Estado").grid(row=0, column=2, sticky="w", padx=(0,4), pady=(4,0))
+        self.cmb_opportunity_status = ttk.Combobox(self.tracker, state="readonly", values=OPPORTUNITY_STATUSES, width=16, style="App.TCombobox")
+        self.cmb_opportunity_status.set(OPPORTUNITY_STATUSES[0])
+        self.cmb_opportunity_status.grid(row=0, column=3, sticky="we", padx=(0,12), pady=(4,0))
+        save_opp = ttk.Button(self.tracker, text="Guardar", style="Primary.TButton", command=self.on_save_opportunity)
+        save_opp.grid(row=0, column=4, sticky="e", pady=(4,0))
+        ttk.Label(self.tracker, text="Enlace de la oferta").grid(row=1, column=0, sticky="w", padx=(6,4), pady=(6,0))
+        self.ent_opportunity_url = ttk.Entry(self.tracker, style="App.TEntry")
+        self.ent_opportunity_url.grid(row=1, column=1, sticky="we", padx=(0,12), pady=(6,0))
+        ttk.Label(self.tracker, text="Notas").grid(row=1, column=2, sticky="w", padx=(0,4), pady=(6,0))
+        self.ent_opportunity_notes = ttk.Entry(self.tracker, style="App.TEntry")
+        self.ent_opportunity_notes.grid(row=1, column=3, sticky="we", padx=(0,12), pady=(6,0))
+        clear_opp = ttk.Button(self.tracker, text="Limpiar", style="Secondary.TButton", command=self._clear_opportunity_form)
+        clear_opp.grid(row=1, column=4, sticky="e", pady=(6,0))
+        self.lst_opportunities = tk.Listbox(self.tracker, height=5, bg=self._palette["entry_bg"], fg=self._palette["fg"], selectbackground="#2563eb", relief="flat")
+        self.lst_opportunities.grid(row=2, column=0, columnspan=4, sticky="we", padx=(6,12), pady=(8,6))
+        opp_actions = ttk.Frame(self.tracker, style="Panel.TFrame")
+        opp_actions.grid(row=2, column=4, sticky="nsew", pady=(8,6))
+        ttk.Button(opp_actions, text="Abrir", style="Secondary.TButton", command=self.on_open_opportunity).pack(fill="x", pady=(0,4))
+        ttk.Button(opp_actions, text="Quitar", style="Secondary.TButton", command=self.on_remove_opportunity).pack(fill="x")
+        for button in (save_opp, clear_opp):
+            button.bind("<Enter>", lambda e, w=button: w.configure(cursor="hand2"))
+            button.bind("<Leave>", lambda e, w=button: w.configure(cursor=""))
+
+        r += 1
+        self.ai_row = r
+        self.ai_panel = ttk.Frame(frm, style="Panel.TFrame")
+        for c in range(4): self.ai_panel.columnconfigure(c, weight=(1 if c in (1, 3) else 0))
+        ttk.Label(self.ai_panel, text="Endpoint compatible").grid(row=0, column=0, sticky="w", padx=(6,4), pady=(4,0))
+        self.ent_ai_endpoint = ttk.Entry(self.ai_panel, style="App.TEntry")
+        self.ent_ai_endpoint.insert(0, DEFAULT_OPENAI_CHAT_ENDPOINT)
+        self.ent_ai_endpoint.grid(row=0, column=1, sticky="we", padx=(0,12), pady=(4,0))
+        ttk.Label(self.ai_panel, text="Modelo").grid(row=0, column=2, sticky="w", padx=(0,4), pady=(4,0))
+        self.ent_ai_model = ttk.Entry(self.ai_panel, style="App.TEntry")
+        self.ent_ai_model.insert(0, "gpt-5")
+        self.ent_ai_model.grid(row=0, column=3, sticky="we", padx=(0,6), pady=(4,0))
+        ttk.Label(self.ai_panel, text="API key").grid(row=1, column=0, sticky="w", padx=(6,4), pady=(6,0))
+        self.ent_ai_key = ttk.Entry(self.ai_panel, style="App.TEntry", show="•")
+        self.ent_ai_key.insert(0, os.environ.get("JOBDORKER_API_KEY", ""))
+        self.ent_ai_key.grid(row=1, column=1, sticky="we", padx=(0,12), pady=(6,0))
+        ttk.Label(self.ai_panel, text="Tarea").grid(row=1, column=2, sticky="w", padx=(0,4), pady=(6,0))
+        self.cmb_ai_task = ttk.Combobox(self.ai_panel, state="readonly", values=list(AI_TASKS.keys()), style="App.TCombobox")
+        self.cmb_ai_task.current(0)
+        self.cmb_ai_task.grid(row=1, column=3, sticky="we", padx=(0,6), pady=(6,0))
+        ttk.Label(self.ai_panel, text="Pegá tu CV, perfil u oferta", style="Muted.TLabel").grid(row=2, column=0, columnspan=4, sticky="w", padx=6, pady=(10,2))
+        self.txt_ai_input = tk.Text(self.ai_panel, height=6, wrap="word", bg=self._palette["entry_bg"], fg=self._palette["fg"], insertbackground=self._palette["fg"], relief="flat")
+        self.txt_ai_input.grid(row=3, column=0, columnspan=4, sticky="we", padx=6)
+        ai_actions = ttk.Frame(self.ai_panel, style="Panel.TFrame")
+        ai_actions.grid(row=4, column=0, columnspan=4, sticky="we", padx=6, pady=(8,4))
+        self.btn_ai_run = ttk.Button(ai_actions, text="✨ Analizar con IA", style="Primary.TButton", command=self.on_ai_run)
+        self.btn_ai_run.pack(side="left")
+        ttk.Button(ai_actions, text="Copiar resultado", style="Secondary.TButton", command=self._copy_ai_result).pack(side="left", padx=8)
+        self.lbl_ai_status = ttk.Label(ai_actions, text="", style="Muted.TLabel")
+        self.lbl_ai_status.pack(side="left", padx=4)
+        ttk.Label(self.ai_panel, text="Resultado", style="Muted.TLabel").grid(row=5, column=0, columnspan=4, sticky="w", padx=6, pady=(4,2))
+        self.txt_ai_result = tk.Text(self.ai_panel, height=8, wrap="word", bg=self._palette["preview_bg"], fg=self._palette["fg"], insertbackground=self._palette["fg"], relief="flat", state="disabled")
+        self.txt_ai_result.grid(row=6, column=0, columnspan=4, sticky="we", padx=6, pady=(0,6))
+
+        r += 1
         # Panel Dorks
-        self.dorks_row = r+1
+        self.dorks_row = r
         self.panel_dorks = ttk.Frame(frm, style="Panel.TFrame")
         self.panel_dorks.grid(row=self.dorks_row, column=0, columnspan=4, sticky="nsew", padx=10, pady=(0,10))
         self.dorks_bar = ttk.Frame(self.panel_dorks, style="Panel.TFrame")
@@ -599,6 +730,8 @@ class App(tk.Tk):
         for c in range(4): frm.columnconfigure(c, weight=1)
 
         self.custom.grid_remove()
+        self.tracker.grid_remove()
+        self.ai_panel.grid_remove()
         self._toggle_currency()
         self._show_dorks()
 
@@ -606,7 +739,7 @@ class App(tk.Tk):
         status = ttk.Frame(self, style="Panel.TFrame"); status.pack(fill="x", side="bottom")
         self.status_left = ttk.Label(status, text="Listo", style="Muted.TLabel"); self.status_left.pack(side="left", padx=10, pady=4)
         ttk.Label(status, text="·", style="Muted.TLabel").pack(side="left", padx=4)
-        ttk.Label(status, text="v4.19 · by Garbox0", style="Muted.TLabel").pack(side="left")
+        ttk.Label(status, text=f"v{APP_VERSION} · by Garbox0", style="Muted.TLabel").pack(side="left")
         self.status_right = ttk.Label(status, text="", style="Muted.TLabel"); self.status_right.pack(side="right", padx=10)
 
     # ----- placeholder -----
@@ -663,10 +796,189 @@ class App(tk.Tk):
         self._custom_expanded = not self._custom_expanded
         if self._custom_expanded:
             self.btn_custom_toggle.configure(text="▾ Portales personalizados")
-            self.custom.grid(row=self.dorks_row-1, column=0, columnspan=4, sticky="we", padx=10, pady=(0,8))
+            self.custom.grid(row=self.custom_row, column=0, columnspan=4, sticky="we", padx=10, pady=(0,8))
         else:
             self.btn_custom_toggle.configure(text="▸ Portales personalizados")
             self.custom.grid_remove()
+
+    # ----- tablero local de oportunidades -----
+    def _toggle_tracker(self):
+        self._tracker_expanded = not self._tracker_expanded
+        if self._tracker_expanded:
+            self._ai_expanded = False
+            self.ai_panel.grid_remove()
+            self.tracker.grid(row=self.tracker_row, column=0, columnspan=4, sticky="we", padx=10, pady=(0,8))
+            self._refresh_opportunities_list()
+            self.after_idle(self.ent_opportunity_title.focus_set)
+        else:
+            self.tracker.grid_remove()
+
+    def _refresh_opportunities_list(self):
+        if not hasattr(self, "lst_opportunities"): return
+        self.lst_opportunities.delete(0, "end")
+        self._opportunity_order = list(range(len(self._opportunities) - 1, -1, -1))
+        for index in self._opportunity_order:
+            item = self._opportunities[index]
+            created = item.get("created_at", "")[:10]
+            status = item.get("status", OPPORTUNITY_STATUSES[0])
+            title = item.get("title", "")
+            self.lst_opportunities.insert("end", f"{created}  ·  {status}  ·  {title}")
+
+    def _clear_opportunity_form(self):
+        self.ent_opportunity_title.delete(0, "end")
+        self.ent_opportunity_url.delete(0, "end")
+        self.ent_opportunity_notes.delete(0, "end")
+        self.cmb_opportunity_status.set(OPPORTUNITY_STATUSES[0])
+
+    def _selected_opportunity_index(self):
+        selected = self.lst_opportunities.curselection()
+        if not selected:
+            messagebox.showinfo("Tablero de oportunidades", "Elegí una oportunidad de la lista.")
+            return None
+        return self._opportunity_order[selected[0]]
+
+    def on_save_opportunity(self):
+        title = self.ent_opportunity_title.get().strip()
+        url = self.ent_opportunity_url.get().strip()
+        notes = self.ent_opportunity_notes.get().strip()
+        status = self.cmb_opportunity_status.get() or OPPORTUNITY_STATUSES[0]
+        if not title:
+            messagebox.showwarning("Tablero de oportunidades", "Ingresá al menos el puesto o la empresa.")
+            return
+        parsed = urlparse(url) if url else None
+        if url and (parsed.scheme not in ("http", "https") or not parsed.netloc):
+            messagebox.showwarning("Tablero de oportunidades", "El enlace debe empezar con http:// o https://.")
+            return
+        self._opportunities.append({
+            "title": title[:180],
+            "url": url[:2000],
+            "notes": notes[:600],
+            "status": status if status in OPPORTUNITY_STATUSES else OPPORTUNITY_STATUSES[0],
+            "created_at": datetime.now().isoformat(timespec="seconds"),
+        })
+        self._save_config()
+        self._refresh_opportunities_list()
+        self._clear_opportunity_form()
+        self.status_right.configure(text="Oportunidad guardada ✔")
+
+    def on_remove_opportunity(self):
+        index = self._selected_opportunity_index()
+        if index is None: return
+        if not messagebox.askyesno("Quitar oportunidad", "¿Querés quitar esta oportunidad del tablero?"):
+            return
+        self._opportunities.pop(index)
+        self._save_config()
+        self._refresh_opportunities_list()
+        self.status_right.configure(text="Oportunidad quitada")
+
+    def on_open_opportunity(self):
+        index = self._selected_opportunity_index()
+        if index is None: return
+        url = self._opportunities[index].get("url", "")
+        if not url:
+            messagebox.showinfo("Tablero de oportunidades", "Esta oportunidad no tiene un enlace guardado.")
+            return
+        webbrowser.open_new_tab(url)
+
+    def _open_kofi(self):
+        webbrowser.open_new_tab(KOFI_URL)
+        self.status_right.configure(text="Gracias por apoyar JobDorker ☕")
+
+    # ----- asistente IA opcional -----
+    def _toggle_ai(self):
+        self._ai_expanded = not self._ai_expanded
+        if self._ai_expanded:
+            self._tracker_expanded = False
+            self.tracker.grid_remove()
+            self.ai_panel.grid(row=self.ai_row, column=0, columnspan=4, sticky="we", padx=10, pady=(0,8))
+            self.after_idle(self.txt_ai_input.focus_set)
+        else:
+            self.ai_panel.grid_remove()
+
+    def _set_ai_result(self, text):
+        self.txt_ai_result.configure(state="normal")
+        self.txt_ai_result.delete("1.0", "end")
+        self.txt_ai_result.insert("1.0", text)
+        self.txt_ai_result.configure(state="disabled")
+
+    def _format_ai_result(self, result):
+        lines = ["Resumen", result.summary]
+        if result.recommendations:
+            lines.extend(["", "Sugerencias"])
+            lines.extend(f"• {item}" for item in result.recommendations)
+        if result.search_queries:
+            lines.extend(["", "Consultas para revisar"])
+            lines.extend(f"• {item}" for item in result.search_queries)
+        if result.caution:
+            lines.extend(["", "Importante", result.caution])
+        if result.total_tokens is not None:
+            lines.extend(["", f"Uso informado por el proveedor: {result.total_tokens} tokens."])
+        return "\n".join(lines)
+
+    def on_ai_run(self):
+        if self._ai_running:
+            return
+        source_text = self.txt_ai_input.get("1.0", "end-1c")
+        endpoint = self.ent_ai_endpoint.get().strip()
+        api_key = self.ent_ai_key.get().strip()
+        model = self.ent_ai_model.get().strip()
+        task = self.cmb_ai_task.get()
+        role = self.ent_rol.get().strip()
+        if getattr(self, "_ph_active", False) and role == getattr(self, "_ph_text", ""):
+            role = ""
+        if len(source_text.strip()) < 20:
+            messagebox.showwarning("Asistente IA", "Pegá al menos unas líneas de CV, perfil u oferta para analizar.")
+            return
+
+        try:
+            endpoint, api_key, model = validate_configuration(endpoint, api_key, model)
+        except AIConfigurationError as exc:
+            messagebox.showwarning("Asistente IA", str(exc))
+            return
+
+        self._save_config()  # Guarda endpoint/modelo, nunca la API key.
+        self._ai_running = True
+        self.btn_ai_run.configure(state="disabled")
+        self.lbl_ai_status.configure(text="Analizando… la ventana sigue disponible.")
+        self.status_right.configure(text="Consulta IA en curso…")
+
+        def worker():
+            try:
+                result = request_job_assistance(endpoint, api_key, model, task, source_text, role)
+                self._ai_queue.put(("success", result))
+            except (AIConfigurationError, AIRequestError, AIResponseError) as exc:
+                self._ai_queue.put(("error", str(exc)))
+            except Exception:
+                self._ai_queue.put(("error", "Ocurrió un error inesperado al consultar la IA."))
+
+        threading.Thread(target=worker, daemon=True).start()
+        self.after(120, self._poll_ai_result)
+
+    def _poll_ai_result(self):
+        try:
+            state, payload = self._ai_queue.get_nowait()
+        except queue.Empty:
+            if self._ai_running:
+                self.after(120, self._poll_ai_result)
+            return
+
+        self._ai_running = False
+        self.btn_ai_run.configure(state="normal")
+        if state == "success":
+            self._set_ai_result(self._format_ai_result(payload))
+            self.lbl_ai_status.configure(text="Listo. Revisá el resultado antes de usarlo en una postulación.")
+            self.status_right.configure(text="Análisis IA listo ✔")
+        else:
+            self._set_ai_result(f"No se pudo completar el análisis.\n\n{payload}")
+            self.lbl_ai_status.configure(text="No se envió ninguna postulación. Revisá configuración, modelo o conexión.")
+            self.status_right.configure(text="No se pudo completar la consulta IA")
+
+    def _copy_ai_result(self):
+        text = self.txt_ai_result.get("1.0", "end-1c").strip()
+        if not text:
+            messagebox.showinfo("Asistente IA", "Todavía no hay un resultado para copiar.")
+            return
+        self._copy(text)
 
     # ----- tema/acento -----
     def _on_theme_change(self, event=None):

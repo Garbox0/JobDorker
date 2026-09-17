@@ -1,145 +1,107 @@
-# JobDorker — Búsquedas avanzadas de empleo
+# JobDorker 2.0 — Búsquedas avanzadas de empleo
 
-**JobDorker** genera *Google dorks* listos para usar y te muestra los resultados en **mosaicos web**. Filtrás por **rol**, **área/industria**, **seniority**, **idioma**, **país** y **modalidad** (remoto / híbrido / presencial). Ideal para llegar directo a las páginas de **careers/jobs** de empresas y portales.
+**JobDorker** es una aplicación gratuita para organizar una búsqueda laboral estratégica y honesta. Genera *Google dorks* listos para usar en portales de empleo y sistemas ATS directos (Greenhouse, Lever, Ashby, etc.), organiza búsquedas por fuente y permite gestionar un tablero de seguimiento de postulaciones localmente con exportación a CSV, sin login ni registro.
 
-> Hecho en Tkinter. by **Garbox0**.
-
----
-
-## Funcionalidades
-
-* **Generación de dorks** (consultas Google) con exclusiones útiles
-
-  * `inurl:careers OR inurl:jobs`
-  * exclusión de **internships/voluntariados** (opcional)
-  * pistas de **salario** (opcional)
-  * modo **Exploración** (consultas menos estrictas).
-* **Mosaicos web**: abre varias fuentes a la vez (visor embebido con fallback al navegador).
-* **Portales personalizados**: agregá tu `site:` o filtro y guardalo como nueva fuente.
-* **Tema oscuro / claro** y **color de acento**.
-* UI responsive con scroll, tarjetas limpias, botones “Abrir en visor / Copiar URL”.
-
-**Fuentes incluidas (por defecto):**
-Google (general), LinkedIn Jobs, Greenhouse, Lever, Ashby, SmartRecruiters, Workday, Get on Board, Bumeran.
-Además podés sumar las tuyas desde **Portales personalizados**.
+> Creado por **Garbox0**. Disponible en dos versiones: la nueva **Web & Desktop App (React 19 + Tauri 2)** y la versión clásica **Python + Tkinter**.
 
 ---
 
-## Uso básico
+## 🚀 Ediciones de JobDorker
 
-1. **Rol (obligatorio)**
-   Escribí el rol con variantes:
-   `“soporte técnico” OR "help desk" OR "service desk" OR "mesa de ayuda"`.
-2. Elegí **Área/Industria**, **Seniority**, **Idioma**, **Ubicación (país)** y **Modalidad**.
-3. Opciones:
-
-   * **Excluir prácticas / pasantías** (–internship, –voluntariado, etc.)
-   * **Incluir pistas de salario** (muestra selector de moneda)
-   * **Modo exploración (menos estricto)** para ampliar resultados.
-4. Elegí una acción:
-
-   * **Generar dorks** → verás las consultas + botones por fuente.
-   * **Búsqueda web (mosaicos)** → abre los resultados en el visor.
-     *(Si no hay runtime de WebView2, se abre tu navegador por defecto.)*
-5. (Opcional) **Portales personalizados**
-   Poné un **Nombre** y un **Filtro / URL** (ej. `site:smartrecruiters.com` o `inurl:jobs`) → **Agregar**.
+| Característica | Versión Web & Desktop (`web/`) | Versión Clásica (`JobDorker_MVP_v2/`) |
+| :--- | :--- | :--- |
+| **Tecnología** | React 19, TypeScript, Vite, Tauri 2 | Python 3.12, Tkinter, PyWebView |
+| **Plataformas** | Windows Desktop (.exe / NSIS) y Web | Windows Desktop (.exe portable) |
+| **Generación de dorks** | ✔ Por grupos (General, Tech, Remoto) | ✔ Filtros por fuente individual |
+| **Tablero de postulaciones** | ✔ Local con filtros y exportación CSV | ✔ Guardado local en JSON |
+| **Asistente IA opcional** | En desarrollo | ✔ Endpoint OpenAI-compatible |
+| **Privacidad** | 100% local (`localStorage`) | 100% local (`~/.jobdorker.json`) |
 
 ---
 
-## Descarga
+## Funcionalidades principales
 
-* Ir a la pestaña **Releases** y bajar:
+* **Generación de dorks (consultas Google estructuradas)**:
+  * Portales de empleo y ATS: `inurl:careers OR inurl:jobs`, Greenhouse, Lever, Ashby, Get on Board, Wellfound, We Work Remotely, Remote OK, LinkedIn, etc.
+  * Filtros por país, modalidad (*Remoto*, *Híbrido*, *Presencial*), seniority e idioma.
+  * Opciones de consulta rápida (*Ver ofertas*) o ampliada (*Ver más resultados / Exploración*).
+* **Mi tablero de postulaciones (local y privado)**:
+  * Guardá tus postulaciones con empresa, puesto, portal, enlace, fecha y estado (*Para revisar*, *Postulé*, *Entrevista*, *Oferta*, *Cerrada*).
+  * Filtro interactivo por estado.
+  * **Exportación a CSV**: descargá tu planilla de seguimiento en cualquier momento.
+* **Búsquedas guardadas**: volvé a consultar tus roles favoritos con un solo clic.
+* **Asistente IA opcional** (en versión Python): analiza CVs u ofertas mediante endpoints compatibles con OpenAI, sin almacenar la clave en disco y solicitando `store: false`.
+* **Aporte voluntario por Ko-fi**: ninguna función depende de donar; el proyecto es 100% libre y de código abierto.
 
-  * **EXE:** `JobDorker_v1.0.0.exe`
-  * **ZIP:** `JobDorker_v1.0.0_Windows.zip`
+---
 
-**Verificación de integridad**
+## 💻 Desarrollo y ejecución
 
-* SHA-256 **(.exe)**: `9803307f3a3416de091246655225183141c99277068350cf78cde90dd1abd17d`
-* SHA-256 **(.zip)**: `7C0A068D72DDC5DAF1CA237968601F5D6D4FC96F5E052273E54A78C2C5CBA7CA`
+### Opción A: Versión moderna Web & Desktop (`web/`)
 
-En Windows:
+Requiere **Node.js 20+** o **pnpm 12+**.
 
 ```powershell
-CertUtil -hashfile .\JobDorker_v1.0.0.exe SHA256
+cd web
+pnpm install
+pnpm run dev
 ```
 
-> ⚠️ **SmartScreen** puede advertir por no estar firmado.
-> Click en **Más información → Ejecutar de todas formas**.
+* Abre la aplicación en tu navegador (por defecto `http://localhost:5173`).
+* Para compilar la versión web estática: `pnpm run build`.
+* Con **Rust** instalado, para ejecutar o compilar el instalador nativo de Windows:
+  * Modo desarrollo: `pnpm run desktop:dev`
+  * Generar instalador NSIS (.exe): `pnpm run desktop:build`
 
----
+### Opción B: Versión clásica Python (`JobDorker_MVP_v2/`)
 
-## Ejecutar desde código (dev)
+Requiere **Windows 10/11** y **Python 3.12+**.
 
-**Requisitos:** Windows 10/11, **Python 3.12+**.
-
-```bash
-git clone https://github.com/<tu-usuario>/JobDorker.git
-cd JobDorker
+```powershell
+cd JobDorker_MVP_v2
 python -m venv .venv
-# Activar venv:
-#   PowerShell: .\.venv\Scripts\Activate
-#   CMD:       .venv\Scripts\activate
+.\.venv\Scripts\Activate
 pip install -r requirements.txt
 python JobDorker.py
 ```
 
----
-
-## 🏭 Construir el .exe (local)
-
-Hay un script de build listo:
+Para compilar el `.exe` portable de la versión Python:
 
 ```bat
 build_windows_exe.bat
 ```
 
-Qué hace:
-
-* Crea un **venv** limpio.
-* Instala dependencias (`requirements.txt`).
-* Convierte `logo.png` a `logo.ico` si hace falta.
-* Compila un **.exe portable** (one-file, windowed) con PyInstaller.
-
-> Si preferís forzar navegador externo (sin visor embebido), abrí el `.bat` y poné `INCLUDE_WEBVIEW=0` antes de compilar.
-
-El ejecutable queda en `dist\JobDorker.exe`.
+El binario se generará en `JobDorker_MVP_v2\dist\JobDorker.exe`.
 
 ---
 
-## Consejos & solución de problemas
+## 🧪 Pruebas unitarias
 
-* **CAPTCHAs de Google**: reducí el ritmo de consultas, desactivá temporariamente algunas fuentes, o probá el modo **Exploración**.
-* **Sin resultados**: probá quitar exclusiones, usar sinónimos del rol o cambiar “Publicado en”.
-* **Visor embebido**: usa **Edge WebView2**. Si no está, JobDorker abre el navegador externo automáticamente.
-* **Antivirus/SmartScreen**: es normal en binarios no firmados. Preferí el **ZIP** + verificá **SHA-256**.
+Desde la raíz del repositorio:
 
----
-
-## Privacidad
-
-No hay login, ni backend. JobDorker **no guarda ni envía** tus datos.
-Solo construye URLs de búsqueda y abre páginas en tu entorno local.
+```bash
+python -m unittest discover -s tests
+```
 
 ---
 
-## Roadmap (ideas)
+## 🔒 Privacidad por diseño
 
-* Guardar presets de usuario (según feedback).
-* Más fuentes por región.
-* Exportar resultados / URLs.
-* Banderas por país e idioma en mosaicos.
-* Firma de código (para evitar advertencias de SmartScreen).
+JobDorker no incluye telemetría intrusiva, rastreadores ni requiere registro.
+- En la versión Web, los datos del tablero y las búsquedas se guardan exclusivamente en el `localStorage` de tu navegador o WebView.
+- En la versión Python, las preferencias y postulaciones se guardan localmente en `~/.jobdorker.json`.
+- En el módulo de IA, la clave de API solo reside en la memoria RAM durante la sesión y nunca se escribe en disco.
 
 ---
 
-## Contribuir
+## ☕ Aportes voluntarios
 
-¡PRs bienvenidos!
-Abrí un **Issue** con bugs o ideas, o enviá un **Pull Request** con mejoras (UI/UX, nuevas fuentes, refactors, etc.).
+JobDorker es y seguirá siendo gratuito y de código abierto. Si te resulta de ayuda en tu búsqueda y querés apoyar el proyecto:
+
+[![Apoyar en Ko-fi](https://storage.ko-fi.com/cdn/kofi5.png?v=6)](https://ko-fi.com/cyberquest50)
 
 ---
 
 ## 🧾 Licencia
 
-Este proyecto se publica bajo la licencia **MIT** (ver `LICENSE`).
+Distribuido bajo licencia **MIT**. Ver archivo `LICENSE` para más detalles.
